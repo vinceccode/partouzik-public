@@ -14,16 +14,236 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      session_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          session_id: string
+          turn_order: number
+          turn_status: Database["public"]["Enums"]["turn_status"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          session_id: string
+          turn_order?: number
+          turn_status?: Database["public"]["Enums"]["turn_status"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          session_id?: string
+          turn_order?: number
+          turn_status?: Database["public"]["Enums"]["turn_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_turn_index: number
+          description: string | null
+          id: string
+          invite_token: string
+          name: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["session_status"]
+          turn_timeout_seconds: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_turn_index?: number
+          description?: string | null
+          id?: string
+          invite_token?: string
+          name: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          turn_timeout_seconds?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_turn_index?: number
+          description?: string | null
+          id?: string
+          invite_token?: string
+          name?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          turn_timeout_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks: {
+        Row: {
+          id: string
+          platform: Database["public"]["Enums"]["music_platform"]
+          platform_url: string | null
+          play_order: number
+          session_id: string
+          submitted_at: string
+          submitted_by: string
+          track_name: string
+        }
+        Insert: {
+          id?: string
+          platform?: Database["public"]["Enums"]["music_platform"]
+          platform_url?: string | null
+          play_order?: number
+          session_id: string
+          submitted_at?: string
+          submitted_by: string
+          track_name: string
+        }
+        Update: {
+          id?: string
+          platform?: Database["public"]["Enums"]["music_platform"]
+          platform_url?: string | null
+          play_order?: number
+          session_id?: string
+          submitted_at?: string
+          submitted_by?: string
+          track_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracks_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      are_friends: {
+        Args: { _user_a: string; _user_b: string }
+        Returns: boolean
+      }
+      is_session_admin: {
+        Args: { _session_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_session_participant: {
+        Args: { _session_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      music_platform: "spotify" | "apple_music" | "youtube" | "other"
+      session_status: "waiting" | "active" | "paused" | "ended"
+      turn_status:
+        | "waiting"
+        | "upcoming_turn"
+        | "current_turn"
+        | "skipped"
+        | "played"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +370,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      music_platform: ["spotify", "apple_music", "youtube", "other"],
+      session_status: ["waiting", "active", "paused", "ended"],
+      turn_status: [
+        "waiting",
+        "upcoming_turn",
+        "current_turn",
+        "skipped",
+        "played",
+      ],
+    },
   },
 } as const
