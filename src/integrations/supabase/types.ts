@@ -234,6 +234,7 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      send_friend_request: { Args: { _username: string }; Returns: undefined }
     }
     Enums: {
       music_platform: "spotify" | "apple_music" | "youtube" | "other"

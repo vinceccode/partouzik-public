@@ -44,20 +44,10 @@ export function useSendFriendRequest() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (friendUsername: string) => {
-      // Find user by username
-      const { data: friend, error: findError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", friendUsername)
-        .single();
-      if (findError || !friend) throw new Error("User not found");
-      if (friend.id === user!.id) throw new Error("Can't add yourself");
-      const { error } = await supabase.from("friendships").insert({
-        user_id: user!.id,
-        friend_id: friend.id,
-        status: "pending",
+      const { error } = await supabase.rpc("send_friend_request", {
+        _username: friendUsername,
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["friends"] }),
   });
