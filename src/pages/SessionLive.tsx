@@ -18,6 +18,11 @@ const platformIcons: Record<string, string> = {
   other: "🎵",
 };
 
+function getYoutubeId(url: string): string | null {
+  const match = url.match(/(?:v=|youtu\.be\/)([^&\n?#]+)/);
+  return match ? match[1] : null;
+}
+
 const turnStatusLabel: Record<string, string> = {
   waiting: "Waiting",
   upcoming_turn: "Up Next",
@@ -192,14 +197,22 @@ const SessionLive = () => {
               {currentTrack ? (
                 <div>
                   <h3 className="font-display font-bold text-lg">{currentTrack.track_name}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-3">
                     {platformIcons[currentTrack.platform]} {currentTrack.platform.replace("_", " ")} — by {currentTrack.submitter?.display_name}
                   </p>
-                  {currentTrack.platform_url && (
-                    <a href={currentTrack.platform_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-1 inline-block">
-                      Open link ↗
-                    </a>
-                  )}
+                  {currentTrack.platform_url && (() => {
+                    const videoId = getYoutubeId(currentTrack.platform_url);
+                    return videoId ? (
+                      <iframe
+                        width="100%"
+                        height="200"
+                        style={{ borderRadius: "16px" }}
+                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                        allow="autoplay; encrypted-media"
+                        allowFullScreen
+                      />
+                    ) : null;
+                  })()}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Waiting for first track...</p>
