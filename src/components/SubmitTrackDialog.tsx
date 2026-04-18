@@ -21,7 +21,9 @@ export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
   const [link, setLink] = useState("");
   const submitTrack = useSubmitTrack();
 
-  const canSubmit = trackName.trim().length > 0 && isValidYoutubeUrl(link.trim());
+  const linkTrimmed = link.trim();
+  const linkValid = linkTrimmed.length === 0 || isValidYoutubeUrl(linkTrimmed);
+  const canSubmit = trackName.trim().length > 0 && linkValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -30,7 +32,7 @@ export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
         sessionId,
         trackName: trackName.trim(),
         platform: "youtube",
-        platformUrl: link.trim(),
+        platformUrl: linkTrimmed || undefined,
       });
       toast({ title: "Track soumise ! 🎵" });
       setTrackName("");
@@ -48,16 +50,16 @@ export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm overflow-y-auto p-4"
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 20, opacity: 0 }}
             transition={{ type: "spring", damping: 25 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-t-3xl bg-card border-t border-border p-6"
+            className="w-full max-w-lg rounded-3xl bg-card border border-border p-6 my-auto max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-display font-bold flex items-center gap-2">
@@ -78,7 +80,7 @@ export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
               </div>
 
               <div>
-                <Label className="text-sm mb-1.5 block">Lien YouTube</Label>
+                <Label className="text-sm mb-1.5 block">Lien YouTube (optionnel)</Label>
                 <Input
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
