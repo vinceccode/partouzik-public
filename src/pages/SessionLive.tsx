@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +9,8 @@ import { useSession, useSessionParticipants, useSessionTracks, useStartSession, 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import SubmitTrackDialog from "@/components/SubmitTrackDialog";
+import YouTubePlayer from "@/components/YouTubePlayer";
+import { advanceTurn } from "@/lib/sessionTurns";
 import { useQueryClient } from "@tanstack/react-query";
 
 const platformIcons: Record<string, string> = {
