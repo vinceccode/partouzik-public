@@ -32,7 +32,7 @@ export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
         sessionId,
         trackName: trackName.trim(),
         platform: "youtube",
-        platformUrl: linkTrimmed || null,
+        platformUrl: linkTrimmed || undefined,
       });
       toast({ title: "Track soumise ! 🎵" });
       setTrackName("");
