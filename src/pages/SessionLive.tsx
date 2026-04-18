@@ -52,6 +52,7 @@ const SessionLive = () => {
   const [showSubmit, setShowSubmit] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const qc = useQueryClient();
+  const advancedForTrackRef = useRef<string | null>(null);
 
   const isAdmin = session?.created_by === user?.id;
   const myParticipant = participants.find((p: any) => p.user_id === user?.id);
@@ -204,16 +205,25 @@ const SessionLive = () => {
                   </p>
                   {currentTrack.platform_url && (() => {
                     const videoId = getYoutubeId(currentTrack.platform_url);
-                    return videoId ? (
-                      <iframe
-                        width="100%"
-                        height="200"
-                        style={{ borderRadius: "16px" }}
-                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                        allow="autoplay; encrypted-media"
-                        allowFullScreen
+                    if (!videoId) return null;
+                    return (
+                      <YouTubePlayer
+                        videoId={videoId}
+                        onEnded={async () => {
+                          // Only the admin advances the turn to avoid race conditions
+                          if (!isAdmin) return;
+                          if (advancedForTrackRef.current === currentTrack.id) return;
+                          advancedForTrackRef.current = currentTrack.id;
+                          try {
+                            await advanceTurn(id!);
+                            qc.invalidateQueries({ queryKey: ["session-participants"] });
+                          } catch (e: any) {
+                            advancedForTrackRef.current = null;
+                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                          }
+                        }}
                       />
-                    ) : null;
+                    );
                   })()}
                 </div>
               ) : (
