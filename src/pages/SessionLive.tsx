@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import { motion, AnimatePresence } from "framer-motion";
@@ -347,6 +347,11 @@ const SessionLive = () => {
                     {turnStatusLabel[p.turn_status]}
                   </p>
                 </div>
+                {hasSubmittedThisRound(p) && (
+                  <span title="Track ready" className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <Check className="h-3 w-3" />
+                  </span>
+                )}
                 {session.created_by === p.user_id && <Crown className="h-4 w-4 text-primary" />}
                 <span className="text-xs text-muted-foreground">#{idx + 1}</span>
               </div>
