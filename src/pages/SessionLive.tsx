@@ -59,13 +59,29 @@ const SessionLive = () => {
   const isMyTurn = myParticipant?.turn_status === "current_turn";
   const isUpcoming = myParticipant?.turn_status === "upcoming_turn";
   const currentPlayer = participants.find((p: any) => p.turn_status === "current_turn");
-  const currentTrack = tracks.length > 0 ? tracks[tracks.length - 1] : null;
 
-  // Reset the auto-advance guard whenever the current player changes,
-  // so the next track can advance the turn when it ends.
-  useEffect(() => {
-    advancedForTrackRef.current = null;
-  }, [currentPlayer?.id]);
+  // The track currently playing = latest track submitted by the current_turn player
+  const currentPlayerTracks = currentPlayer
+    ? tracks.filter((t: any) => t.submitted_by === currentPlayer.user_id)
+    : [];
+  const currentTrack = currentPlayerTracks.length > 0
+    ? currentPlayerTracks[currentPlayerTracks.length - 1]
+    : null;
+  const currentTrackOrder = currentTrack?.play_order ?? 0;
+
+  // A participant has submitted for this round if:
+  //  - they are current_turn AND have a track (currentTrack exists)
+  //  - they are upcoming_turn (or other) AND their latest track has play_order > currentTrackOrder
+  const hasSubmittedThisRound = (p: any) => {
+    const userTracks = tracks.filter((t: any) => t.submitted_by === p.user_id);
+    if (userTracks.length === 0) return false;
+    const latest = userTracks[userTracks.length - 1];
+    if (p.turn_status === "current_turn") return !!currentTrack;
+    return latest.play_order > currentTrackOrder;
+  };
+
+  const mySubmitted = myParticipant ? hasSubmittedThisRound(myParticipant) : false;
+  const canSubmit = (isMyTurn || isUpcoming) && !mySubmitted;
 
   // Realtime subscription
   useEffect(() => {
