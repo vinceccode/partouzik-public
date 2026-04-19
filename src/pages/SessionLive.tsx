@@ -61,6 +61,12 @@ const SessionLive = () => {
   const currentPlayer = participants.find((p: any) => p.turn_status === "current_turn");
   const currentTrack = tracks.length > 0 ? tracks[tracks.length - 1] : null;
 
+  // Reset the auto-advance guard whenever the current player changes,
+  // so the next track can advance the turn when it ends.
+  useEffect(() => {
+    advancedForTrackRef.current = null;
+  }, [currentPlayer?.id]);
+
   // Realtime subscription
   useEffect(() => {
     if (!id) return;
