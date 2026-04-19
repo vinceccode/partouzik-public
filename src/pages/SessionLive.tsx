@@ -52,7 +52,7 @@ const SessionLive = () => {
   const [showSubmit, setShowSubmit] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const qc = useQueryClient();
-  const advancedForTrackRef = useRef<string | null>(null);
+  
 
   const isAdmin = session?.created_by === user?.id;
   const myParticipant = participants.find((p: any) => p.user_id === user?.id);
