@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Play, SkipForward, Users, Music, Crown, Clock, Share2, QrCode, Copy } from "lucide-react";
+import { ArrowLeft, Play, SkipForward, Users, Music, Crown, Clock, Share2, QrCode, Copy, Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSession, useSessionParticipants, useSessionTracks, useStartSession, useSubmitTrack } from "@/hooks/useSessions";
