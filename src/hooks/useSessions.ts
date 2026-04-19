@@ -177,27 +177,30 @@ export function useSubmitTrack() {
       });
       if (error) throw error;
 
-      // Advance turn: mark current as played, upcoming as current, next as upcoming
+      // Advance turn: reset everyone to "waiting", then set the next two
       const { data: participants } = await supabase
         .from("session_participants")
         .select("*")
         .eq("session_id", sessionId)
         .order("turn_order");
 
-      if (participants) {
+      if (participants && participants.length > 0) {
         const currentIdx = participants.findIndex((p: any) => p.turn_status === "current_turn");
         if (currentIdx >= 0) {
+          // Reset ALL participants back to "waiting" to clear stale statuses
           await supabase
             .from("session_participants")
-            .update({ turn_status: "played" as any })
-            .eq("id", participants[currentIdx].id);
+            .update({ turn_status: "waiting" as any })
+            .eq("session_id", sessionId);
 
+          // Set next player as current_turn
           const nextIdx = (currentIdx + 1) % participants.length;
           await supabase
             .from("session_participants")
             .update({ turn_status: "current_turn" as any })
             .eq("id", participants[nextIdx].id);
 
+          // Set the one after as upcoming_turn (if different)
           const upcomingIdx = (nextIdx + 1) % participants.length;
           if (upcomingIdx !== nextIdx) {
             await supabase
