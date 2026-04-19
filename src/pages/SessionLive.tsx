@@ -228,24 +228,7 @@ const SessionLive = () => {
                   {currentTrack.platform_url && (() => {
                     const videoId = getYoutubeId(currentTrack.platform_url);
                     if (!videoId) return null;
-                    return (
-                      <YouTubePlayer
-                        videoId={videoId}
-                        onEnded={async () => {
-                          // Only the admin advances the turn to avoid race conditions
-                          if (!isAdmin) return;
-                          if (advancedForTrackRef.current === currentTrack.id) return;
-                          advancedForTrackRef.current = currentTrack.id;
-                          try {
-                            await advanceTurn(id!);
-                            qc.invalidateQueries({ queryKey: ["session-participants"] });
-                          } catch (e: any) {
-                            advancedForTrackRef.current = null;
-                            toast({ title: "Erreur", description: e.message, variant: "destructive" });
-                          }
-                        }}
-                      />
-                    );
+                    return <YouTubePlayer videoId={videoId} />;
                   })()}
                 </div>
               ) : (
@@ -253,15 +236,23 @@ const SessionLive = () => {
               )}
             </motion.div>
 
-            {/* Your turn notification */}
-            {isMyTurn && (
+            {/* Submit track CTA — shown when it's your turn OR you're up next */}
+            {canSubmit && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4 rounded-2xl bg-primary/10 border border-primary p-5 text-center"
+                className={`mb-4 rounded-2xl border p-5 text-center ${
+                  isMyTurn ? "bg-primary/10 border-primary" : "bg-accent/10 border-accent/30"
+                }`}
               >
-                <h3 className="font-display font-bold text-lg text-primary mb-2">🎵 It's Your Turn!</h3>
-                <p className="text-sm text-muted-foreground mb-3">Submit a track for everyone to listen to</p>
+                <h3 className={`font-display font-bold text-lg mb-2 ${isMyTurn ? "text-primary" : "text-accent"}`}>
+                  {isMyTurn ? "🎵 It's Your Turn!" : "⏳ You're Up Next"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {isMyTurn
+                    ? "Submit a track for everyone to listen to"
+                    : "Pre-submit your track now so it's ready when your turn comes"}
+                </p>
                 <Button
                   onClick={() => setShowSubmit(true)}
                   className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 bg-glow rounded-2xl h-12 font-semibold"
@@ -271,13 +262,17 @@ const SessionLive = () => {
               </motion.div>
             )}
 
-            {isUpcoming && (
+            {/* Confirmation when already submitted */}
+            {(isMyTurn || isUpcoming) && mySubmitted && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4 rounded-2xl bg-accent/10 border border-accent/30 p-4 text-center"
+                className="mb-4 rounded-2xl bg-card border border-border p-4 text-center"
               >
-                <p className="font-semibold text-accent text-sm">⏳ You're up next! Get a track ready...</p>
+                <p className="font-semibold text-sm flex items-center justify-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  {isMyTurn ? "Your track is playing now" : "Track ready — waiting for your turn"}
+                </p>
               </motion.div>
             )}
 
@@ -289,18 +284,26 @@ const SessionLive = () => {
                 className="mb-4 flex gap-2"
               >
                 <Button
-                  variant="outline"
-                  className="flex-1 gap-1 rounded-xl"
+                  className="flex-1 gap-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 bg-glow h-12 font-semibold"
                   onClick={async () => {
                     if (!currentPlayer) return;
                     try {
-                      // Mark current as skipped first, then advance.
-                      await supabase
-                        .from("session_participants")
-                        .update({ turn_status: "current_turn" as any })
-                        .eq("id", currentPlayer.id); // ensure status is current_turn for advanceTurn
                       await advanceTurn(id!);
-                      // Re-mark the just-played one as "skipped" instead of "played"
+                      qc.invalidateQueries({ queryKey: ["session-participants"] });
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" /> Next Track
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-1 rounded-xl"
+                  onClick={async () => {
+                    if (!currentPlayer) return;
+                    try {
+                      await advanceTurn(id!);
                       await supabase
                         .from("session_participants")
                         .update({ turn_status: "skipped" as any })
@@ -311,7 +314,7 @@ const SessionLive = () => {
                     }
                   }}
                 >
-                  <SkipForward className="h-4 w-4" /> Skip Turn
+                  <SkipForward className="h-4 w-4" /> Skip
                 </Button>
               </motion.div>
             )}
