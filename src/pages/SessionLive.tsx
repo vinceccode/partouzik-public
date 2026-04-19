@@ -276,27 +276,22 @@ const SessionLive = () => {
                   variant="outline"
                   className="flex-1 gap-1 rounded-xl"
                   onClick={async () => {
-                    // Skip current player
-                    if (currentPlayer) {
+                    if (!currentPlayer) return;
+                    try {
+                      // Mark current as skipped first, then advance.
+                      await supabase
+                        .from("session_participants")
+                        .update({ turn_status: "current_turn" as any })
+                        .eq("id", currentPlayer.id); // ensure status is current_turn for advanceTurn
+                      await advanceTurn(id!);
+                      // Re-mark the just-played one as "skipped" instead of "played"
                       await supabase
                         .from("session_participants")
                         .update({ turn_status: "skipped" as any })
                         .eq("id", currentPlayer.id);
-                      // Advance to next
-                      const currentIdx = participants.findIndex((p: any) => p.id === currentPlayer.id);
-                      const nextIdx = (currentIdx + 1) % participants.length;
-                      await supabase
-                        .from("session_participants")
-                        .update({ turn_status: "current_turn" as any })
-                        .eq("id", participants[nextIdx].id);
-                      const upcomingIdx = (nextIdx + 1) % participants.length;
-                      if (upcomingIdx !== nextIdx) {
-                        await supabase
-                          .from("session_participants")
-                          .update({ turn_status: "upcoming_turn" as any })
-                          .eq("id", participants[upcomingIdx].id);
-                      }
                       qc.invalidateQueries({ queryKey: ["session-participants"] });
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
                     }
                   }}
                 >
