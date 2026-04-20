@@ -248,7 +248,7 @@ const SessionLive = () => {
                   onClick={() => setShowSubmit(true)}
                   className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 bg-glow rounded-2xl h-12 font-semibold"
                 >
-                  <Music className="h-4 w-4" /> Submit Track
+                  <Music className="h-4 w-4" /> {isMyTurn ? "Submit Track 🎵" : "Prepare next track 🎵"}
                 </Button>
               </motion.div>
             )}
