@@ -188,6 +188,33 @@ export function useSubmitTrack() {
   });
 }
 
+export function useDeleteSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      // Delete dependent rows first (no DB cascade configured).
+      const { error: tracksErr } = await supabase
+        .from("tracks")
+        .delete()
+        .eq("session_id", sessionId);
+      if (tracksErr) throw tracksErr;
+
+      const { error: partsErr } = await supabase
+        .from("session_participants")
+        .delete()
+        .eq("session_id", sessionId);
+      if (partsErr) throw partsErr;
+
+      const { error: sessErr } = await supabase
+        .from("sessions")
+        .delete()
+        .eq("id", sessionId);
+      if (sessErr) throw sessErr;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sessions"] }),
+  });
+}
+
 export function useJoinByToken() {
   const qc = useQueryClient();
   const { user } = useAuth();
