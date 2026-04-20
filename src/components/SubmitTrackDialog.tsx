@@ -16,26 +16,41 @@ interface Props {
 const isValidYoutubeUrl = (url: string) =>
   url.includes("youtube.com") || url.includes("youtu.be");
 
+async function fetchYoutubeTitle(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.title ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
-  const [trackName, setTrackName] = useState("");
   const [link, setLink] = useState("");
   const submitTrack = useSubmitTrack();
 
   const linkTrimmed = link.trim();
-  const linkValid = linkTrimmed.length === 0 || isValidYoutubeUrl(linkTrimmed);
-  const canSubmit = trackName.trim().length > 0 && linkValid;
+  const linkValid = isValidYoutubeUrl(linkTrimmed);
+  const canSubmit = linkTrimmed.length > 0 && linkValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     try {
+      // Try to fetch the real title; fall back to the URL itself
+      const fetchedTitle = await fetchYoutubeTitle(linkTrimmed);
+      const trackName = fetchedTitle?.trim() || linkTrimmed;
+
       await submitTrack.mutateAsync({
         sessionId,
-        trackName: trackName.trim(),
+        trackName,
         platform: "youtube",
-        platformUrl: linkTrimmed || undefined,
+        platformUrl: linkTrimmed,
       });
       toast({ title: "Track soumise ! 🎵" });
-      setTrackName("");
       setLink("");
       onClose();
     } catch (e: any) {
@@ -70,24 +85,14 @@ export default function SubmitTrackDialog({ open, onClose, sessionId }: Props) {
 
             <div className="flex flex-col gap-4">
               <div>
-                <Label className="text-sm mb-1.5 block">Titre de la musique</Label>
-                <Input
-                  value={trackName}
-                  onChange={(e) => setTrackName(e.target.value)}
-                  placeholder="e.g. Blinding Lights"
-                  className="h-12 rounded-xl bg-background"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm mb-1.5 block">Lien YouTube (optionnel)</Label>
+                <Label className="text-sm mb-1.5 block">Lien YouTube</Label>
                 <Input
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
                   className="h-12 rounded-xl bg-background"
                 />
-                {link.trim() && !isValidYoutubeUrl(link.trim()) && (
+                {linkTrimmed && !linkValid && (
                   <p className="text-xs text-destructive mt-1.5">
                     Le lien doit contenir youtube.com ou youtu.be
                   </p>
