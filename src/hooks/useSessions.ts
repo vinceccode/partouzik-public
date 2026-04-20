@@ -177,8 +177,9 @@ export function useSubmitTrack() {
       });
       if (error) throw error;
 
-      // Do not advance the turn on submit — the current track keeps playing
-      // while the same participant remains on current_turn.
+      // Automatically advance turn on submit: submitted track becomes "now playing"
+      const { advanceTurn } = await import("@/lib/sessionTurns");
+      await advanceTurn(sessionId);
       return;
     },
     onSuccess: () => {
