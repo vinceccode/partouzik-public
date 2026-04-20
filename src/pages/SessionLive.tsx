@@ -60,24 +60,15 @@ const SessionLive = () => {
   const isUpcoming = myParticipant?.turn_status === "upcoming_turn";
   const currentPlayer = participants.find((p: any) => p.turn_status === "current_turn");
 
-  // The track currently playing = latest track submitted by the current_turn player
-  const currentPlayerTracks = currentPlayer
-    ? tracks.filter((t: any) => t.submitted_by === currentPlayer.user_id)
-    : [];
-  const currentTrack = currentPlayerTracks.length > 0
-    ? currentPlayerTracks[currentPlayerTracks.length - 1]
+  // The "Now Playing" track is the track submitted by the current_turn player.
+  const currentTrack = currentPlayer
+    ? tracks.find((t: any) => t.submitted_by === currentPlayer.user_id) ?? null
     : null;
-  const currentTrackOrder = currentTrack?.play_order ?? 0;
 
-  // A participant has submitted for this round if:
-  //  - they are current_turn AND have a track (currentTrack exists)
-  //  - they are upcoming_turn (or other) AND their latest track has play_order > currentTrackOrder
+  // A participant has submitted a track for this round if they have any track in the queue
+  // that hasn't been "consumed" yet. Simplest rule: they have at least one track submitted.
   const hasSubmittedThisRound = (p: any) => {
-    const userTracks = tracks.filter((t: any) => t.submitted_by === p.user_id);
-    if (userTracks.length === 0) return false;
-    const latest = userTracks[userTracks.length - 1];
-    if (p.turn_status === "current_turn") return !!currentTrack;
-    return latest.play_order > currentTrackOrder;
+    return tracks.some((t: any) => t.submitted_by === p.user_id);
   };
 
   const mySubmitted = myParticipant ? hasSubmittedThisRound(myParticipant) : false;
