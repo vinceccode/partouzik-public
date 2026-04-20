@@ -276,16 +276,30 @@ const SessionLive = () => {
               </motion.div>
             )}
 
-            {/* Admin controls — Skip current player if they haven't submitted */}
+            {/* Admin controls — manual override: Next Track / Skip */}
             {isAdmin && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mb-4 flex"
+                className="mb-4 flex gap-2"
               >
                 <Button
                   variant="outline"
-                  className="w-full gap-1 rounded-xl h-12"
+                  className="flex-1 gap-1 rounded-xl h-12"
+                  onClick={async () => {
+                    try {
+                      await advanceTurn(id!);
+                      qc.invalidateQueries({ queryKey: ["session-participants"] });
+                    } catch (e: any) {
+                      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" /> Next Track
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-1 rounded-xl h-12"
                   onClick={async () => {
                     if (!currentPlayer) return;
                     try {
@@ -300,7 +314,7 @@ const SessionLive = () => {
                     }
                   }}
                 >
-                  <SkipForward className="h-4 w-4" /> Skip current player
+                  <SkipForward className="h-4 w-4" /> Skip
                 </Button>
               </motion.div>
             )}
