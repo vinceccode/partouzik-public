@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import SubmitTrackDialog from "@/components/SubmitTrackDialog";
 import YouTubePlayer from "@/components/YouTubePlayer";
+import GuestNowPlaying from "@/components/GuestNowPlaying";
 import { advanceTurn } from "@/lib/sessionTurns";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -220,17 +221,25 @@ const SessionLive = () => {
                 <span className="text-xs font-semibold text-primary uppercase tracking-wider">Now Playing</span>
               </div>
               {currentTrack ? (
-                <div>
-                  <h3 className="font-display font-bold text-lg">{currentTrack.track_name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {platformIcons[currentTrack.platform]} {currentTrack.platform.replace("_", " ")} — by {currentTrack.submitter?.display_name}
-                  </p>
-                  {currentTrack.platform_url && (() => {
-                    const videoId = getYoutubeId(currentTrack.platform_url);
-                    if (!videoId) return null;
-                    return <YouTubePlayer videoId={videoId} />;
-                  })()}
-                </div>
+                isAdmin ? (
+                  <div>
+                    <h3 className="font-display font-bold text-lg">{currentTrack.track_name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {platformIcons[currentTrack.platform]} {currentTrack.platform.replace("_", " ")} — by {currentTrack.submitter?.display_name}
+                    </p>
+                    {currentTrack.platform_url && (() => {
+                      const videoId = getYoutubeId(currentTrack.platform_url);
+                      if (!videoId) return null;
+                      return <YouTubePlayer videoId={videoId} />;
+                    })()}
+                  </div>
+                ) : (
+                  <GuestNowPlaying
+                    trackName={currentTrack.track_name}
+                    submittedBy={currentTrack.submitter?.display_name}
+                    trackKey={currentTrack.id}
+                  />
+                )
               ) : (
                 <p className="text-sm text-muted-foreground">Waiting for first track...</p>
               )}
