@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Volume2 } from "lucide-react";
 
 interface Props {
   videoId: string;
@@ -12,12 +13,18 @@ export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const onEndedRef = useRef(onEnded);
   const onDurationRef = useRef(onDuration);
+  const [muted, setMuted] = useState(true);
 
   // Keep latest callbacks without re-creating the player
   useEffect(() => {
     onEndedRef.current = onEnded;
     onDurationRef.current = onDuration;
   }, [onEnded, onDuration]);
+
+  // Reset to muted when track changes (browsers block unmuted autoplay)
+  useEffect(() => {
+    setMuted(true);
+  }, [videoId]);
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
@@ -26,13 +33,12 @@ export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
     const params = new URLSearchParams({
       autoplay: "1",
       playsinline: "1",
+      mute: muted ? "1" : "0",
       enablejsapi: "1",
-      mute: "0",
       origin,
-      widget_referrer: origin,
     });
     return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-  }, [videoId, origin]);
+  }, [videoId, origin, muted]);
 
   // Subscribe to YouTube player state changes via postMessage
   useEffect(() => {
@@ -64,7 +70,6 @@ export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
       try {
         const data =
           typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        // YT.PlayerState.ENDED === 0
         if (data?.event === "onStateChange" && data?.info === 0) {
           onEndedRef.current?.();
         }
@@ -89,10 +94,10 @@ export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [videoId]);
+  }, [videoId, muted]);
 
   return (
-    <div className="overflow-hidden rounded-2xl">
+    <div className="relative overflow-hidden rounded-2xl">
       <iframe
         ref={iframeRef}
         src={src}
@@ -103,6 +108,17 @@ export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
         title="YouTube player"
         frameBorder={0}
       />
+      {muted && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-sm">
+          <button
+            onClick={() => setMuted(false)}
+            className="flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-semibold text-primary-foreground shadow-lg bg-glow hover:bg-primary/90 transition-colors"
+          >
+            <Volume2 className="h-5 w-5" />
+            Activer le son
+          </button>
+        </div>
+      )}
     </div>
   );
 }
