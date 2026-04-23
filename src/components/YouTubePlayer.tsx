@@ -4,16 +4,20 @@ interface Props {
   videoId: string;
   /** Called when the video finishes playing. */
   onEnded?: () => void;
+  /** Called with duration (seconds) when known. */
+  onDuration?: (seconds: number) => void;
 }
 
-export default function YouTubePlayer({ videoId, onEnded }: Props) {
+export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const onEndedRef = useRef(onEnded);
+  const onDurationRef = useRef(onDuration);
 
-  // Keep latest callback without re-creating the player
+  // Keep latest callbacks without re-creating the player
   useEffect(() => {
     onEndedRef.current = onEnded;
-  }, [onEnded]);
+    onDurationRef.current = onDuration;
+  }, [onEnded, onDuration]);
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
@@ -31,28 +35,27 @@ export default function YouTubePlayer({ videoId, onEnded }: Props) {
 
   // Subscribe to YouTube player state changes via postMessage
   useEffect(() => {
-    function sendListening() {
+    function postToPlayer(message: object) {
       const win = iframeRef.current?.contentWindow;
       if (!win) return;
-      // Tell the embedded player we want to receive events
-      win.postMessage(
-        JSON.stringify({
-          event: "listening",
-          id: videoId,
-          channel: "widget",
-        }),
-        "*"
-      );
-      win.postMessage(
-        JSON.stringify({
-          event: "command",
-          func: "addEventListener",
-          args: ["onStateChange"],
-          id: videoId,
-          channel: "widget",
-        }),
-        "*"
-      );
+      win.postMessage(JSON.stringify(message), "*");
+    }
+
+    function sendListening() {
+      postToPlayer({ event: "listening", id: videoId, channel: "widget" });
+      postToPlayer({
+        event: "command",
+        func: "addEventListener",
+        args: ["onStateChange"],
+        id: videoId,
+        channel: "widget",
+      });
+      postToPlayer({
+        event: "command",
+        func: "getDuration",
+        id: videoId,
+        channel: "widget",
+      });
     }
 
     function handleMessage(event: MessageEvent) {
@@ -64,6 +67,9 @@ export default function YouTubePlayer({ videoId, onEnded }: Props) {
         if (data?.event === "onStateChange" && data?.info === 0) {
           onEndedRef.current?.();
         }
+        if (data?.event === "infoDelivery" && data?.info?.duration) {
+          onDurationRef.current?.(data.info.duration);
+        }
       } catch {
         /* noop */
       }
@@ -73,7 +79,6 @@ export default function YouTubePlayer({ videoId, onEnded }: Props) {
 
     const iframe = iframeRef.current;
     iframe?.addEventListener("load", sendListening);
-    // Also send a few times in case the load event fired before we subscribed
     const t1 = setTimeout(sendListening, 500);
     const t2 = setTimeout(sendListening, 1500);
 
