@@ -221,25 +221,27 @@ const SessionLive = () => {
                 <span className="text-xs font-semibold text-primary uppercase tracking-wider">Now Playing</span>
               </div>
               {currentTrack ? (
-                isAdmin ? (
-                  <div>
-                    <h3 className="font-display font-bold text-lg">{currentTrack.track_name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {platformIcons[currentTrack.platform]} {currentTrack.platform.replace("_", " ")} — by {currentTrack.submitter?.display_name}
-                    </p>
-                    {currentTrack.platform_url && (() => {
-                      const videoId = getYoutubeId(currentTrack.platform_url);
-                      if (!videoId) return null;
+                <div>
+                  <h3 className="font-display font-bold text-lg">{currentTrack.track_name}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {platformIcons[currentTrack.platform]} {currentTrack.platform.replace("_", " ")} — by {currentTrack.submitter?.display_name}
+                  </p>
+                  {currentTrack.platform_url && (() => {
+                    const videoId = getYoutubeId(currentTrack.platform_url);
+                    if (!videoId) return null;
+
+                    if (isAdmin) {
                       return <YouTubePlayer videoId={videoId} />;
-                    })()}
-                  </div>
-                ) : (
-                  <GuestNowPlaying
-                    trackName={currentTrack.track_name}
-                    submittedBy={currentTrack.submitter?.display_name}
-                    trackKey={currentTrack.id}
-                  />
-                )
+                    } else {
+                      return (
+                        <div className="mt-2 flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+                          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                          <p className="text-sm text-muted-foreground">En cours de lecture sur l'enceinte...</p>
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Waiting for first track...</p>
               )}
