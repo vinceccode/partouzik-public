@@ -27,6 +27,7 @@ export default function YouTubePlayer({ videoId, onEnded, onDuration }: Props) {
       autoplay: "1",
       playsinline: "1",
       enablejsapi: "1",
+      mute: "0",
       origin,
       widget_referrer: origin,
     });
