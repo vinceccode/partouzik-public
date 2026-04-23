@@ -177,9 +177,9 @@ export function useSubmitTrack() {
       });
       if (error) throw error;
 
-      // Advance the turn immediately so the submitted track becomes "Now Playing".
-      const { advanceTurn } = await import("@/lib/sessionTurns");
-      await advanceTurn(sessionId);
+      // Do not advance the turn on submit — the current track keeps playing
+      // while the same participant remains on current_turn.
+      return;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["session-tracks"] });

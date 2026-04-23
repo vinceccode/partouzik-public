@@ -60,15 +60,24 @@ const SessionLive = () => {
   const isUpcoming = myParticipant?.turn_status === "upcoming_turn";
   const currentPlayer = participants.find((p: any) => p.turn_status === "current_turn");
 
-  // The "Now Playing" track is the track submitted by the current_turn player.
-  const currentTrack = currentPlayer
-    ? tracks.find((t: any) => t.submitted_by === currentPlayer.user_id) ?? null
+  // The track currently playing = latest track submitted by the current_turn player
+  const currentPlayerTracks = currentPlayer
+    ? tracks.filter((t: any) => t.submitted_by === currentPlayer.user_id)
+    : [];
+  const currentTrack = currentPlayerTracks.length > 0
+    ? currentPlayerTracks[currentPlayerTracks.length - 1]
     : null;
+  const currentTrackOrder = currentTrack?.play_order ?? 0;
 
-  // A participant has submitted a track for this round if they have any track in the queue
-  // that hasn't been "consumed" yet. Simplest rule: they have at least one track submitted.
+  // A participant has submitted for this round if:
+  //  - they are current_turn AND have a track (currentTrack exists)
+  //  - they are upcoming_turn (or other) AND their latest track has play_order > currentTrackOrder
   const hasSubmittedThisRound = (p: any) => {
-    return tracks.some((t: any) => t.submitted_by === p.user_id);
+    const userTracks = tracks.filter((t: any) => t.submitted_by === p.user_id);
+    if (userTracks.length === 0) return false;
+    const latest = userTracks[userTracks.length - 1];
+    if (p.turn_status === "current_turn") return !!currentTrack;
+    return latest.play_order > currentTrackOrder;
   };
 
   const mySubmitted = myParticipant ? hasSubmittedThisRound(myParticipant) : false;
@@ -248,7 +257,7 @@ const SessionLive = () => {
                   onClick={() => setShowSubmit(true)}
                   className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 bg-glow rounded-2xl h-12 font-semibold"
                 >
-                  <Music className="h-4 w-4" /> {isMyTurn ? "Submit Track 🎵" : "Prepare next track 🎵"}
+                  <Music className="h-4 w-4" /> Submit Track
                 </Button>
               </motion.div>
             )}
@@ -267,7 +276,7 @@ const SessionLive = () => {
               </motion.div>
             )}
 
-            {/* Admin controls — manual override: Next Track / Skip */}
+            {/* Admin controls */}
             {isAdmin && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -275,9 +284,9 @@ const SessionLive = () => {
                 className="mb-4 flex gap-2"
               >
                 <Button
-                  variant="outline"
-                  className="flex-1 gap-1 rounded-xl h-12"
+                  className="flex-1 gap-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 bg-glow h-12 font-semibold"
                   onClick={async () => {
+                    if (!currentPlayer) return;
                     try {
                       await advanceTurn(id!);
                       qc.invalidateQueries({ queryKey: ["session-participants"] });
@@ -290,7 +299,7 @@ const SessionLive = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 gap-1 rounded-xl h-12"
+                  className="gap-1 rounded-xl"
                   onClick={async () => {
                     if (!currentPlayer) return;
                     try {
